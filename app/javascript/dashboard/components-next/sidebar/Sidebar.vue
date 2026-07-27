@@ -667,6 +667,25 @@ const menuItems = computed(() => {
       ],
     },
     {
+      name: 'CRM',
+      label: t('SIDEBAR.CRM'),
+      icon: 'i-lucide-kanban',
+      children: [
+        {
+          name: 'Kanban',
+          label: t('SIDEBAR.CRM_KANBAN'),
+          to: accountScopedRoute('crm_index'),
+          activeOn: ['crm_index'],
+        },
+        {
+          name: 'Pipeline Settings',
+          label: t('SIDEBAR.CRM_SETTINGS'),
+          to: accountScopedRoute('crm_pipeline_settings'),
+          activeOn: ['crm_pipeline_settings'],
+        },
+      ],
+    },
+    {
       name: 'Reports',
       label: t('SIDEBAR.REPORTS'),
       icon: 'i-lucide-chart-spline',

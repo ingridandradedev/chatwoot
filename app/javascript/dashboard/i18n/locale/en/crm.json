@@ -1,0 +1,54 @@
+{
+  "CRM": {
+    "LOADING": "Loading...",
+    "KANBAN": {
+      "PIPELINE_LABEL": "Pipeline",
+      "NEW_DEAL": "New Deal",
+      "EMPTY_STATE": {
+        "TITLE": "No pipelines yet",
+        "DESCRIPTION": "Create your first pipeline to start tracking deals on the Kanban board.",
+        "CREATE_PIPELINE": "Create Pipeline"
+      }
+    },
+    "SETTINGS": {
+      "SAVE": "Save",
+      "CANCEL": "Cancel",
+      "DELETE": "Delete",
+      "PIPELINE": {
+        "TITLE": "Pipelines",
+        "NAME_PLACEHOLDER": "Pipeline name",
+        "ADD": "Add",
+        "RENAME": "Rename pipeline",
+        "DELETE": "Delete pipeline",
+        "CREATE_SUCCESS": "Pipeline created successfully",
+        "CREATE_ERROR": "Failed to create pipeline",
+        "RENAME_SUCCESS": "Pipeline renamed successfully",
+        "RENAME_ERROR": "Failed to rename pipeline",
+        "DELETE_SUCCESS": "Pipeline deleted successfully",
+        "DELETE_ERROR": "Failed to delete pipeline. Reassign deals before deleting.",
+        "DELETE_CONFIRM_TITLE": "Delete Pipeline",
+        "DELETE_CONFIRM_MESSAGE": "Are you sure you want to delete this pipeline? This action cannot be undone. All stages in this pipeline will also be removed."
+      },
+      "STAGE": {
+        "SELECT_PIPELINE": "Select a pipeline from the sidebar to manage its stages.",
+        "DESCRIPTION": "Manage stages for this pipeline. Drag to reorder.",
+        "NAME_PLACEHOLDER": "New stage name",
+        "ADD": "Add Stage",
+        "RENAME": "Rename stage",
+        "DELETE": "Delete stage",
+        "DRAG": "Drag to reorder",
+        "DEALS_COUNT": "{count} deal(s)",
+        "CREATE_SUCCESS": "Stage created successfully",
+        "CREATE_ERROR": "Failed to create stage",
+        "RENAME_SUCCESS": "Stage renamed successfully",
+        "RENAME_ERROR": "Failed to rename stage",
+        "DELETE_SUCCESS": "Stage deleted successfully",
+        "DELETE_ERROR": "Failed to delete stage",
+        "REORDER_ERROR": "Failed to reorder stages",
+        "DELETE_CONFIRM_TITLE": "Delete Stage",
+        "DELETE_CONFIRM_MESSAGE": "Are you sure you want to delete this stage?",
+        "DELETE_CONFIRM_HAS_DEALS": "This stage has deals assigned to it. Please reassign all deals to another stage before deleting."
+      }
+    }
+  }
+}

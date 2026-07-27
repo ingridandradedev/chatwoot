@@ -206,6 +206,28 @@ Rails.application.routes.draw do
               resources :notes, only: [:index]
             end
           end
+
+          # CRM Module routes
+          namespace :crm do
+            resources :pipelines, only: [:index, :show, :create, :update, :destroy] do
+              resources :stages, only: [:index, :create, :update, :destroy] do
+                collection do
+                  post :reorder
+                end
+              end
+              resources :deals, only: [:index, :show, :create, :update, :destroy]
+            end
+            resources :contacts, only: [] do
+              resources :activities, only: [:index, :create]
+              resources :tasks, only: [:index, :create], controller: 'tasks', action_suffix: '_for_contact'
+            end
+            resources :tasks, only: [:index, :show, :update, :destroy] do
+              member do
+                post :complete
+                post :reopen
+              end
+            end
+          end
           resources :contacts, only: [:index, :show, :update, :create, :destroy] do
             collection do
               get :active

@@ -512,6 +512,8 @@
         "HISTORY": "History",
         "NOTES": "Notes",
         "MEDIA": "Media",
+        "CRM_ACTIVITIES": "Activities",
+        "CRM_TASKS": "Tasks",
         "MERGE": "Merge"
       },
       "HISTORY": {

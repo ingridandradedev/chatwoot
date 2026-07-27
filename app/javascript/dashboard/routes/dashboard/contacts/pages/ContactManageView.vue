@@ -14,6 +14,8 @@ import ContactHistory from 'dashboard/components-next/Contacts/ContactsSidebar/C
 import ContactMedia from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMedia.vue';
 import ContactMerge from 'dashboard/components-next/Contacts/ContactsSidebar/ContactMerge.vue';
 import ContactCustomAttributes from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCustomAttributes.vue';
+import ContactCrmActivities from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCrmActivities.vue';
+import ContactCrmTasks from 'dashboard/components-next/Contacts/ContactsSidebar/ContactCrmTasks.vue';
 
 const store = useStore();
 const route = useRoute();
@@ -42,6 +44,8 @@ const CONTACT_TABS_OPTIONS = [
   { key: 'HISTORY', value: 'history' },
   { key: 'NOTES', value: 'notes' },
   { key: 'MEDIA', value: 'media' },
+  { key: 'CRM_ACTIVITIES', value: 'crm_activities' },
+  { key: 'CRM_TASKS', value: 'crm_tasks' },
   { key: 'MERGE', value: 'merge' },
 ];
 
@@ -176,6 +180,14 @@ onMounted(() => {
           <ContactNotes v-if="activeTab === 'notes'" />
           <ContactHistory v-if="activeTab === 'history'" />
           <ContactMedia v-if="activeTab === 'media'" />
+          <ContactCrmActivities
+            v-if="activeTab === 'crm_activities'"
+            :contact-id="route.params.contactId"
+          />
+          <ContactCrmTasks
+            v-if="activeTab === 'crm_tasks'"
+            :contact-id="route.params.contactId"
+          />
           <ContactMerge
             v-if="activeTab === 'merge'"
             ref="contactMergeRef"
