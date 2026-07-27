@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n';
 import { useCrmPipelinesStore } from 'dashboard/stores/crm/pipelines';
 import { useCrmDealsStore } from 'dashboard/stores/crm/deals';
 import KanbanColumn from 'dashboard/components/crm/KanbanColumn.vue';
+import DealFormModal from 'dashboard/components/crm/DealFormModal.vue';
 
 const { t } = useI18n();
 
@@ -59,6 +60,11 @@ const openDealForm = () => {
 };
 
 const closeDealForm = () => {
+  showDealForm.value = false;
+};
+
+const onDealFormSubmit = async (dealData) => {
+  await dealStore.createDeal(selectedPipelineId.value, dealData);
   showDealForm.value = false;
 };
 </script>
@@ -151,12 +157,13 @@ const closeDealForm = () => {
       </div>
     </template>
 
-    <!-- Deal Form Modal placeholder - will be created in task 12.3 -->
-    <!-- <DealFormModal
-      v-if="showDealForm"
+    <!-- Deal Form Modal -->
+    <DealFormModal
+      :show="showDealForm"
       :pipeline-id="selectedPipelineId"
       :stages="stages"
+      @submit="onDealFormSubmit"
       @close="closeDealForm"
-    /> -->
+    />
   </div>
 </template>
