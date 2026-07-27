@@ -1,23 +1,20 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useCrmPipelinesStore } from 'dashboard/stores/crm/pipelines';
 import { useCrmDealsStore } from 'dashboard/stores/crm/deals';
+import PipelineAPI from 'dashboard/api/crm/pipelines';
 import KanbanColumn from 'dashboard/components/crm/KanbanColumn.vue';
 import DealFormModal from 'dashboard/components/crm/DealFormModal.vue';
 
 const { t } = useI18n();
 
-const pipelineStore = useCrmPipelinesStore();
 const dealStore = useCrmDealsStore();
 
+const pipelines = ref([]);
 const selectedPipelineId = ref(null);
 const showDealForm = ref(false);
+const isFetchingPipelines = ref(false);
 
-const pipelines = computed(() => pipelineStore.getRecords);
-const isFetchingPipelines = computed(
-  () => pipelineStore.getUIFlags.fetchingList
-);
 const isFetchingDeals = computed(() => dealStore.getUIFlags.fetchingList);
 
 const selectedPipeline = computed(() =>
@@ -28,10 +25,21 @@ const hasNoPipelines = computed(
   () => !isFetchingPipelines.value && pipelines.value.length === 0
 );
 
+const fetchPipelines = async () => {
+  isFetchingPipelines.value = true;
+  try {
+    const { data } = await PipelineAPI.get();
+    pipelines.value = data.payload || data || [];
+  } catch {
+    pipelines.value = [];
+  } finally {
+    isFetchingPipelines.value = false;
+  }
+};
+
 onMounted(async () => {
-  await pipelineStore.get();
+  await fetchPipelines();
   if (pipelines.value.length) {
-    // Default to the most recently created pipeline (first in getRecords, sorted by id desc)
     selectedPipelineId.value = pipelines.value[0].id;
   }
 });
@@ -63,7 +71,7 @@ const closeDealForm = () => {
   showDealForm.value = false;
 };
 
-const onDealFormSubmit = async (dealData) => {
+const onDealFormSubmit = async dealData => {
   await dealStore.createDeal(selectedPipelineId.value, dealData);
   showDealForm.value = false;
 };
