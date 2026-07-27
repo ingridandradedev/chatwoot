@@ -5,6 +5,11 @@ module Api::V1::Accounts::Crm
 
     private
 
+    def check_authorization(model = nil)
+      model ||= "Crm::#{controller_name.classify}".constantize
+      authorize(model)
+    end
+
     def crm_pipelines
       Current.account.crm_pipelines
     end
