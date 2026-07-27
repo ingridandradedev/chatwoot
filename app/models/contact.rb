@@ -66,7 +66,7 @@ class Contact < ApplicationRecord
   has_many :crm_tasks, class_name: 'Crm::Task'
   has_many :crm_deals, class_name: 'Crm::Deal'
   before_validation :prepare_contact_attributes
-  after_create_commit :dispatch_create_event, :ip_lookup
+  after_create_commit :dispatch_create_event, :ip_lookup, :auto_create_crm_deals
   after_update_commit :dispatch_update_event
   after_destroy_commit :dispatch_destroy_event
   before_save :sync_contact_attributes
@@ -239,6 +239,23 @@ class Contact < ApplicationRecord
 
   def dispatch_create_event
     Rails.configuration.dispatcher.dispatch(CONTACT_CREATED, Time.zone.now, contact: self)
+  end
+
+  def auto_create_crm_deals
+    account.crm_pipelines.where(auto_create_deals: true).find_each do |pipeline|
+      first_stage = pipeline.first_stage
+      next unless first_stage
+
+      Crm::Deal.create(
+        account: account,
+        contact: self,
+        stage: first_stage,
+        created_by_id: account.users.first&.id || 1
+      )
+    rescue ActiveRecord::RecordInvalid
+      # Skip if deal already exists for this contact in this pipeline
+      nil
+    end
   end
 
   def dispatch_update_event

@@ -133,6 +133,27 @@ const cancelDeletePipeline = () => {
   deletingPipelineId.value = null;
 };
 
+const toggleAutoCreateDeals = async () => {
+  if (!selectedPipeline.value) return;
+  const newValue = !selectedPipeline.value.auto_create_deals;
+  try {
+    await pipelineStore.update({
+      id: selectedPipelineId.value,
+      pipeline: { auto_create_deals: newValue },
+    });
+    useAlert(
+      newValue
+        ? t('CRM.SETTINGS.PIPELINE.AUTO_DEALS_ENABLED')
+        : t('CRM.SETTINGS.PIPELINE.AUTO_DEALS_DISABLED')
+    );
+    await pipelineStore.get();
+  } catch (error) {
+    const message =
+      error?.response?.data?.message || 'Failed to update setting';
+    useAlert(message);
+  }
+};
+
 // Stage operations
 const fetchStages = async pipelineId => {
   isFetchingStages.value = true;
@@ -368,6 +389,18 @@ const onStageReorder = async () => {
             <p class="text-sm text-n-slate-11 mt-1">
               {{ t('CRM.SETTINGS.STAGE.DESCRIPTION') }}
             </p>
+            <!-- Auto-create deals toggle -->
+            <label class="flex items-center gap-2 mt-3 cursor-pointer">
+              <input
+                type="checkbox"
+                :checked="selectedPipeline.auto_create_deals"
+                class="w-4 h-4 rounded border-n-weak text-n-brand focus:ring-n-brand"
+                @change="toggleAutoCreateDeals"
+              />
+              <span class="text-sm text-n-slate-12">
+                {{ t('CRM.SETTINGS.PIPELINE.AUTO_DEALS_LABEL') }}
+              </span>
+            </label>
           </header>
 
           <!-- Stage content -->

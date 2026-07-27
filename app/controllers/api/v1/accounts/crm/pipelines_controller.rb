@@ -32,7 +32,7 @@ module Api::V1::Accounts::Crm
     end
 
     def pipeline_params
-      params.require(:pipeline).permit(:name)
+      params.require(:pipeline).permit(:name, :auto_create_deals)
     end
   end
 end

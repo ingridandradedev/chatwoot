@@ -27,7 +27,10 @@
         "DELETE_SUCCESS": "Pipeline deleted successfully",
         "DELETE_ERROR": "Failed to delete pipeline. Reassign deals before deleting.",
         "DELETE_CONFIRM_TITLE": "Delete Pipeline",
-        "DELETE_CONFIRM_MESSAGE": "Are you sure you want to delete this pipeline? This action cannot be undone. All stages in this pipeline will also be removed."
+        "DELETE_CONFIRM_MESSAGE": "Are you sure you want to delete this pipeline? This action cannot be undone. All stages in this pipeline will also be removed.",
+        "AUTO_DEALS_LABEL": "Automatically create a deal for every new contact",
+        "AUTO_DEALS_ENABLED": "Auto-create deals enabled",
+        "AUTO_DEALS_DISABLED": "Auto-create deals disabled"
       },
       "STAGE": {
         "SELECT_PIPELINE": "Select a pipeline from the sidebar to manage its stages.",
