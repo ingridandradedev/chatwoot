@@ -138,7 +138,7 @@ const fetchStages = async pipelineId => {
   isFetchingStages.value = true;
   try {
     const response = await StageAPI.getStages(pipelineId);
-    stages.value = response.data || [];
+    stages.value = response.data.payload || response.data || [];
   } catch {
     stages.value = [];
   } finally {
