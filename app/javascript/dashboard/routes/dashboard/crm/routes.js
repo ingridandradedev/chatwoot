@@ -2,6 +2,7 @@ import { frontendURL } from '../../../helper/URLHelper';
 import { FEATURE_FLAGS } from '../../../featureFlags';
 
 const CrmIndex = () => import('./pages/CrmIndex.vue');
+const CrmActivitiesBoard = () => import('./pages/CrmActivitiesBoard.vue');
 const PipelineSettings = () => import('./pages/PipelineSettings.vue');
 
 const commonMeta = {
@@ -14,6 +15,12 @@ export const routes = [
     path: frontendURL('accounts/:accountId/crm'),
     name: 'crm_index',
     component: CrmIndex,
+    meta: commonMeta,
+  },
+  {
+    path: frontendURL('accounts/:accountId/crm/activities'),
+    name: 'crm_activities_board',
+    component: CrmActivitiesBoard,
     meta: commonMeta,
   },
   {

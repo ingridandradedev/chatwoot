@@ -5,6 +5,10 @@ json.assignee do
   json.id task.assignee.id
   json.name task.assignee.name
 end
+json.contact do
+  json.id task.contact.id
+  json.name task.contact.name
+end
 json.due_date task.due_date.to_i
 json.reminder_at task.reminder_at&.to_i
 json.reminded task.reminded

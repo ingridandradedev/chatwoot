@@ -10,6 +10,9 @@
         "CREATE_PIPELINE": "Create Pipeline"
       }
     },
+    "ACTIVITIES_BOARD": {
+      "TITLE": "Activities"
+    },
     "SETTINGS": {
       "SAVE": "Save",
       "CANCEL": "Cancel",
