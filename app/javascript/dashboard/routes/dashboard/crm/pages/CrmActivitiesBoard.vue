@@ -131,7 +131,10 @@ const openCreateModal = () => {
 
 const closeCreateModal = () => {
   showCreateModal.value = false;
+  formError.value = '';
 };
+
+const formError = ref('');
 
 const resetForm = () => {
   form.value = {
@@ -147,11 +150,23 @@ const resetForm = () => {
   contactSearch.value = '';
   contactResults.value = [];
   showContactDropdown.value = false;
+  formError.value = '';
 };
 
 const submitTask = async () => {
   if (!isFormValid.value || isSubmitting.value) return;
 
+  // Client-side validation: reminder must be before due date
+  if (form.value.reminderAt && form.value.dueDate) {
+    const reminder = new Date(form.value.reminderAt);
+    const due = new Date(form.value.dueDate);
+    if (reminder >= due) {
+      formError.value = 'Reminder must be before the due date';
+      return;
+    }
+  }
+
+  formError.value = '';
   isSubmitting.value = true;
   try {
     const payload = {
@@ -167,7 +182,11 @@ const submitTask = async () => {
     const newTask = data.payload || data;
     tasks.value.unshift(newTask);
     closeCreateModal();
-  } catch {
+  } catch (error) {
+    formError.value =
+      error?.response?.data?.message ||
+      error?.response?.data?.error ||
+      'Failed to create task';
     // Error handling - could add toast here
   } finally {
     isSubmitting.value = false;
@@ -298,6 +317,14 @@ onMounted(fetchTasks);
         <woot-modal-header header-title="New Task" />
 
         <form class="flex flex-col w-full gap-4 px-6 pb-6" @submit.prevent="submitTask">
+          <!-- Error message -->
+          <div
+            v-if="formError"
+            class="px-3 py-2 text-sm text-n-ruby-11 bg-n-ruby-3 border border-n-ruby-6 rounded-lg"
+          >
+            {{ formError }}
+          </div>
+
           <!-- Title -->
           <div class="w-full">
             <label class="block mb-1 text-sm font-medium text-n-slate-12">
