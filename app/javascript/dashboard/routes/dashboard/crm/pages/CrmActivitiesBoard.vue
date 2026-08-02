@@ -1,8 +1,11 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import TaskAPI from 'dashboard/api/crm/tasks';
+import ContactAPI from 'dashboard/api/contacts';
+import AgentsAPI from 'dashboard/api/agents';
 import Draggable from 'vuedraggable';
+import NextButton from 'dashboard/components-next/button/Button.vue';
 
 const { t } = useI18n();
 
@@ -14,6 +17,31 @@ const STATUS_COLUMNS = [
 
 const tasks = ref([]);
 const isLoading = ref(false);
+const showCreateModal = ref(false);
+
+// Create form state
+const form = ref({
+  title: '',
+  description: '',
+  contactId: null,
+  contactName: '',
+  assigneeId: null,
+  dueDate: '',
+  reminderAt: '',
+  priority: 'low',
+});
+const isSubmitting = ref(false);
+
+// Contact search
+const contactSearch = ref('');
+const contactResults = ref([]);
+const isSearchingContacts = ref(false);
+const showContactDropdown = ref(false);
+let searchTimeout = null;
+
+// Agents
+const agents = ref([]);
+const isLoadingAgents = ref(false);
 
 const tasksByStatus = computed(() => {
   const grouped = { pending: [], overdue: [], completed: [] };
@@ -28,6 +56,10 @@ const tasksByStatus = computed(() => {
   return grouped;
 });
 
+const isFormValid = computed(() => {
+  return !!form.value.title.trim() && !!form.value.contactId && !!form.value.dueDate;
+});
+
 const fetchTasks = async () => {
   isLoading.value = true;
   try {
@@ -37,6 +69,108 @@ const fetchTasks = async () => {
     tasks.value = [];
   } finally {
     isLoading.value = false;
+  }
+};
+
+const fetchAgents = async () => {
+  if (agents.value.length > 0) return;
+  isLoadingAgents.value = true;
+  try {
+    const response = await AgentsAPI.get();
+    agents.value = response.data || [];
+  } catch {
+    agents.value = [];
+  } finally {
+    isLoadingAgents.value = false;
+  }
+};
+
+const searchContacts = async query => {
+  if (!query || query.length < 2) {
+    contactResults.value = [];
+    showContactDropdown.value = false;
+    return;
+  }
+  isSearchingContacts.value = true;
+  try {
+    const response = await ContactAPI.search(query);
+    contactResults.value = response.data.payload || response.data || [];
+    showContactDropdown.value = contactResults.value.length > 0;
+  } catch {
+    contactResults.value = [];
+    showContactDropdown.value = false;
+  } finally {
+    isSearchingContacts.value = false;
+  }
+};
+
+const onContactSearchInput = event => {
+  const query = event.target.value;
+  contactSearch.value = query;
+  if (form.value.contactId && query !== form.value.contactName) {
+    form.value.contactId = null;
+    form.value.contactName = '';
+  }
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => searchContacts(query), 300);
+};
+
+const selectContact = contact => {
+  form.value.contactId = contact.id;
+  form.value.contactName = contact.name || contact.email || `Contact #${contact.id}`;
+  contactSearch.value = form.value.contactName;
+  showContactDropdown.value = false;
+  contactResults.value = [];
+};
+
+const openCreateModal = () => {
+  resetForm();
+  fetchAgents();
+  showCreateModal.value = true;
+};
+
+const closeCreateModal = () => {
+  showCreateModal.value = false;
+};
+
+const resetForm = () => {
+  form.value = {
+    title: '',
+    description: '',
+    contactId: null,
+    contactName: '',
+    assigneeId: null,
+    dueDate: '',
+    reminderAt: '',
+    priority: 'low',
+  };
+  contactSearch.value = '';
+  contactResults.value = [];
+  showContactDropdown.value = false;
+};
+
+const submitTask = async () => {
+  if (!isFormValid.value || isSubmitting.value) return;
+
+  isSubmitting.value = true;
+  try {
+    const payload = {
+      title: form.value.title.trim(),
+      description: form.value.description.trim() || null,
+      assignee_id: form.value.assigneeId ? Number(form.value.assigneeId) : null,
+      due_date: form.value.dueDate ? new Date(form.value.dueDate).toISOString() : null,
+      reminder_at: form.value.reminderAt ? new Date(form.value.reminderAt).toISOString() : null,
+      priority: form.value.priority,
+    };
+
+    const { data } = await TaskAPI.createForContact(form.value.contactId, payload);
+    const newTask = data.payload || data;
+    tasks.value.unshift(newTask);
+    closeCreateModal();
+  } catch {
+    // Error handling - could add toast here
+  } finally {
+    isSubmitting.value = false;
   }
 };
 
@@ -65,7 +199,8 @@ const onDragEnd = async (evt, toStatus) => {
 
 const formatDueDate = dateStr => {
   if (!dateStr) return '';
-  const date = new Date(dateStr);
+  const ts = typeof dateStr === 'number' ? dateStr * 1000 : dateStr;
+  const date = new Date(ts);
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
@@ -88,6 +223,11 @@ onMounted(fetchTasks);
       <h1 class="text-lg font-semibold text-n-slate-12">
         {{ t('CRM.ACTIVITIES_BOARD.TITLE') }}
       </h1>
+      <NextButton
+        label="New Task"
+        icon="i-lucide-plus"
+        @click="openCreateModal"
+      />
     </header>
 
     <!-- Loading -->
@@ -151,5 +291,136 @@ onMounted(fetchTasks);
         </Draggable>
       </div>
     </div>
+
+    <!-- Create Task Modal -->
+    <woot-modal :show="showCreateModal" :on-close="closeCreateModal">
+      <div class="flex flex-col h-auto overflow-auto">
+        <woot-modal-header header-title="New Task" />
+
+        <form class="flex flex-col w-full gap-4 px-6 pb-6" @submit.prevent="submitTask">
+          <!-- Title -->
+          <div class="w-full">
+            <label class="block mb-1 text-sm font-medium text-n-slate-12">
+              Title <span class="text-n-ruby-9">*</span>
+            </label>
+            <input
+              v-model="form.title"
+              type="text"
+              class="w-full h-10 px-3 text-sm border rounded-lg bg-n-alpha-black2 border-n-weak text-n-slate-12 placeholder:text-n-slate-10 focus:outline-none focus:border-n-brand"
+              placeholder="Task title"
+            />
+          </div>
+
+          <!-- Contact search -->
+          <div class="relative w-full">
+            <label class="block mb-1 text-sm font-medium text-n-slate-12">
+              Contact <span class="text-n-ruby-9">*</span>
+            </label>
+            <input
+              :value="contactSearch"
+              type="text"
+              class="w-full h-10 px-3 text-sm border rounded-lg bg-n-alpha-black2 border-n-weak text-n-slate-12 placeholder:text-n-slate-10 focus:outline-none focus:border-n-brand"
+              placeholder="Search contacts..."
+              @input="onContactSearchInput"
+              @focus="showContactDropdown = contactResults.length > 0 && !form.contactId"
+              @blur="setTimeout(() => { showContactDropdown = false }, 200)"
+            />
+            <div v-if="isSearchingContacts" class="absolute text-xs right-3 top-9 text-n-slate-10">
+              ...
+            </div>
+            <ul
+              v-if="showContactDropdown"
+              class="absolute z-10 w-full mt-1 overflow-y-auto bg-white border rounded-lg shadow-lg dark:bg-n-solid-2 border-n-weak max-h-48"
+            >
+              <li
+                v-for="contact in contactResults"
+                :key="contact.id"
+                class="px-3 py-2 text-sm cursor-pointer text-n-slate-12 hover:bg-n-alpha-2"
+                @mousedown.prevent="selectContact(contact)"
+              >
+                <span class="font-medium">{{ contact.name || 'Unnamed' }}</span>
+                <span v-if="contact.email" class="ml-2 text-n-slate-10">{{ contact.email }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Description -->
+          <div class="w-full">
+            <label class="block mb-1 text-sm font-medium text-n-slate-12">Description</label>
+            <textarea
+              v-model="form.description"
+              rows="3"
+              class="w-full px-3 py-2 text-sm border rounded-lg bg-n-alpha-black2 border-n-weak text-n-slate-12 placeholder:text-n-slate-10 focus:outline-none focus:border-n-brand resize-none"
+              placeholder="Optional description"
+            />
+          </div>
+
+          <!-- Assignee -->
+          <div class="w-full">
+            <label class="block mb-1 text-sm font-medium text-n-slate-12">Assignee</label>
+            <select
+              v-model="form.assigneeId"
+              class="w-full h-10 px-3 text-sm border rounded-lg bg-n-alpha-black2 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-brand"
+            >
+              <option :value="null">Unassigned</option>
+              <option v-for="agent in agents" :key="agent.id" :value="agent.id">
+                {{ agent.name || agent.email }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Due Date -->
+          <div class="w-full">
+            <label class="block mb-1 text-sm font-medium text-n-slate-12">
+              Due Date <span class="text-n-ruby-9">*</span>
+            </label>
+            <input
+              v-model="form.dueDate"
+              type="datetime-local"
+              class="w-full h-10 px-3 text-sm border rounded-lg bg-n-alpha-black2 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-brand"
+            />
+          </div>
+
+          <!-- Reminder -->
+          <div class="w-full">
+            <label class="block mb-1 text-sm font-medium text-n-slate-12">Reminder</label>
+            <input
+              v-model="form.reminderAt"
+              type="datetime-local"
+              class="w-full h-10 px-3 text-sm border rounded-lg bg-n-alpha-black2 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-brand"
+            />
+          </div>
+
+          <!-- Priority -->
+          <div class="w-full">
+            <label class="block mb-1 text-sm font-medium text-n-slate-12">Priority</label>
+            <select
+              v-model="form.priority"
+              class="w-full h-10 px-3 text-sm border rounded-lg bg-n-alpha-black2 border-n-weak text-n-slate-12 focus:outline-none focus:border-n-brand"
+            >
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex flex-row justify-end w-full gap-2 py-2">
+            <NextButton
+              faded
+              slate
+              type="reset"
+              label="Cancel"
+              @click.prevent="closeCreateModal"
+            />
+            <NextButton
+              type="submit"
+              label="Create Task"
+              :disabled="!isFormValid || isSubmitting"
+            />
+          </div>
+        </form>
+      </div>
+    </woot-modal>
   </div>
 </template>
