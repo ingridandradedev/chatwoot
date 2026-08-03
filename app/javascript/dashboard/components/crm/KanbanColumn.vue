@@ -28,7 +28,7 @@ const onDragEnd = evt => {
 </script>
 
 <template>
-  <div class="kanban-column flex flex-col w-72 min-w-[288px] bg-n-alpha-black2 rounded-lg">
+  <div class="kanban-column flex flex-col w-72 min-w-[288px] flex-shrink-0 bg-n-alpha-black2 rounded-lg">
     <header class="px-3 py-2 font-medium text-sm border-b text-n-slate-12">
       {{ stage.name }} ({{ deals.length }})
     </header>
