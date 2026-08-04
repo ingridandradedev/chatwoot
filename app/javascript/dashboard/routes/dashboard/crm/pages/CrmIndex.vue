@@ -23,6 +23,7 @@ const selectedPipeline = computed(() =>
   pipelines.value.find(p => p.id === selectedPipelineId.value)
 );
 const stages = computed(() => selectedPipeline.value?.stages || []);
+const cardFields = computed(() => selectedPipeline.value?.card_fields || ['name', 'email', 'phone_number']);
 const hasNoPipelines = computed(
   () => !isFetchingPipelines.value && pipelines.value.length === 0
 );
@@ -205,6 +206,7 @@ const onDealFormSubmit = async dealData => {
           :key="stage.id"
           :stage="stage"
           :deals="getDealsForStage(stage.id)"
+          :card-fields="cardFields"
           @deal-moved="onDealMoved"
           @deal-click="onDealClick"
         />

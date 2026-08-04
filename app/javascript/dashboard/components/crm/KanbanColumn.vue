@@ -11,6 +11,10 @@ const props = defineProps({
     type: Array,
     default: () => [],
   },
+  cardFields: {
+    type: Array,
+    default: () => ['name', 'email', 'phone_number'],
+  },
 });
 
 const emit = defineEmits(['deal-moved', 'deal-click']);
@@ -53,7 +57,7 @@ const onCardClick = deal => {
     >
       <template #item="{ element }">
         <div @click="onCardClick(element)">
-          <DealCard :deal="element" />
+          <DealCard :deal="element" :card-fields="cardFields" />
         </div>
       </template>
     </Draggable>

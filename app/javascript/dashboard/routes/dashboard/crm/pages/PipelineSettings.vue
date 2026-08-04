@@ -1,12 +1,14 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRoute } from 'vue-router';
 import draggable from 'vuedraggable';
 import { useCrmPipelinesStore } from 'dashboard/stores/crm/pipelines';
 import { useAlert } from 'dashboard/composables';
 import StageAPI from 'dashboard/api/crm/stages';
 
 const { t } = useI18n();
+const route = useRoute();
 const pipelineStore = useCrmPipelinesStore();
 
 // Pipeline state
@@ -38,6 +40,7 @@ const selectedPipeline = computed(() =>
 
 onMounted(async () => {
   await pipelineStore.get();
+  await fetchCustomAttributes();
   if (pipelines.value.length) {
     selectedPipelineId.value = pipelines.value[0].id;
   }
@@ -151,6 +154,57 @@ const toggleAutoCreateDeals = async () => {
     const message =
       error?.response?.data?.message || 'Failed to update setting';
     useAlert(message);
+  }
+};
+
+// Card fields configuration
+const MAX_CARD_FIELDS = 6;
+const AVAILABLE_STANDARD_FIELDS = [
+  { key: 'name', label: 'Name' },
+  { key: 'email', label: 'Email' },
+  { key: 'phone_number', label: 'Phone' },
+  { key: 'company', label: 'Company' },
+  { key: 'deal_value', label: 'Deal Value' },
+  { key: 'deal_title', label: 'Deal Title' },
+];
+
+const currentCardFields = computed(() => selectedPipeline.value?.card_fields || ['name', 'email', 'phone_number']);
+
+const customAttributeDefinitions = ref([]);
+
+const fetchCustomAttributes = async () => {
+  try {
+    const accountId = route.params.accountId || 1;
+    const response = await StageAPI.get ? null : null;
+    // Use global axios (Chatwoot pattern)
+    const { data } = await window.axios.get(`/api/v1/accounts/${accountId}/custom_attribute_definitions`);
+    customAttributeDefinitions.value = (data.data || []).filter(a => a.attribute_model === 'contact_attribute');
+  } catch {
+    customAttributeDefinitions.value = [];
+  }
+};
+
+const isFieldSelected = field => currentCardFields.value.includes(field);
+
+const toggleCardField = async field => {
+  let fields = [...currentCardFields.value];
+  if (fields.includes(field)) {
+    fields = fields.filter(f => f !== field);
+  } else {
+    if (fields.length >= MAX_CARD_FIELDS) {
+      useAlert(`Maximum ${MAX_CARD_FIELDS} fields allowed on card`);
+      return;
+    }
+    fields.push(field);
+  }
+  try {
+    await pipelineStore.update({
+      id: selectedPipelineId.value,
+      pipeline: { card_fields: fields },
+    });
+    await pipelineStore.get();
+  } catch (error) {
+    useAlert(error?.response?.data?.message || 'Failed to update card fields');
   }
 };
 
@@ -402,6 +456,53 @@ const onStageReorder = async () => {
               </span>
             </label>
           </header>
+
+          <!-- Card Fields Configuration -->
+          <div class="px-6 py-4 border-b border-n-strong">
+            <h3 class="text-sm font-semibold text-n-slate-12 mb-1">
+              Card Fields
+            </h3>
+            <p class="text-xs text-n-slate-10 mb-3">
+              Select which fields appear on deal cards (max {{ MAX_CARD_FIELDS }}).
+              {{ currentCardFields.length }}/{{ MAX_CARD_FIELDS }} selected.
+            </p>
+            <div class="flex flex-wrap gap-2">
+              <!-- Standard fields -->
+              <label
+                v-for="field in AVAILABLE_STANDARD_FIELDS"
+                :key="field.key"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md cursor-pointer border transition-colors"
+                :class="isFieldSelected(field.key)
+                  ? 'bg-n-blue-3 border-n-blue-7 text-n-blue-11'
+                  : 'bg-n-surface-2 border-n-weak text-n-slate-11 hover:border-n-slate-8'"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isFieldSelected(field.key)"
+                  class="sr-only"
+                  @change="toggleCardField(field.key)"
+                />
+                {{ field.label }}
+              </label>
+              <!-- Custom attributes -->
+              <label
+                v-for="attr in customAttributeDefinitions"
+                :key="attr.attribute_key"
+                class="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md cursor-pointer border transition-colors"
+                :class="isFieldSelected(attr.attribute_key)
+                  ? 'bg-n-violet-3 border-n-violet-7 text-n-violet-11'
+                  : 'bg-n-surface-2 border-n-weak text-n-slate-11 hover:border-n-slate-8'"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isFieldSelected(attr.attribute_key)"
+                  class="sr-only"
+                  @change="toggleCardField(attr.attribute_key)"
+                />
+                {{ attr.attribute_display_name }}
+              </label>
+            </div>
+          </div>
 
           <!-- Stage content -->
           <div class="flex-1 overflow-y-auto p-6">
