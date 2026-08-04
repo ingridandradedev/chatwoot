@@ -6,6 +6,7 @@ import PipelineAPI from 'dashboard/api/crm/pipelines';
 import DealAPI from 'dashboard/api/crm/deals';
 import KanbanColumn from 'dashboard/components/crm/KanbanColumn.vue';
 import DealFormModal from 'dashboard/components/crm/DealFormModal.vue';
+import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -137,9 +138,9 @@ const onDealFormSubmit = async dealData => {
     <!-- Loading state -->
     <div
       v-if="isFetchingPipelines"
-      class="flex items-center justify-center flex-1"
+      class="flex items-center justify-center py-10 text-n-slate-11"
     >
-      <span class="text-n-slate-11">{{ t('CRM.LOADING') }}</span>
+      <Spinner />
     </div>
 
     <!-- Empty state: no pipelines -->
@@ -196,9 +197,9 @@ const onDealFormSubmit = async dealData => {
       <!-- Board columns -->
       <div
         v-if="isFetchingDeals"
-        class="flex items-center justify-center flex-1"
+        class="flex items-center justify-center py-10 text-n-slate-11"
       >
-        <span class="text-n-slate-11">{{ t('CRM.LOADING') }}</span>
+        <Spinner />
       </div>
       <div v-else class="flex flex-1 gap-4 p-4 overflow-x-auto overflow-y-hidden">
         <KanbanColumn

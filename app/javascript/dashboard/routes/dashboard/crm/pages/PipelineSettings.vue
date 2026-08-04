@@ -6,6 +6,7 @@ import draggable from 'vuedraggable';
 import { useCrmPipelinesStore } from 'dashboard/stores/crm/pipelines';
 import { useAlert } from 'dashboard/composables';
 import StageAPI from 'dashboard/api/crm/stages';
+import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 
 const { t } = useI18n();
 const route = useRoute();
@@ -326,9 +327,9 @@ const onStageReorder = async () => {
     <!-- Loading state -->
     <div
       v-if="isFetchingPipelines"
-      class="flex items-center justify-center flex-1"
+      class="flex items-center justify-center py-10 text-n-slate-11"
     >
-      <span class="text-n-slate-11">{{ t('CRM.LOADING') }}</span>
+      <Spinner />
     </div>
 
     <template v-else>
@@ -509,9 +510,9 @@ const onStageReorder = async () => {
             <!-- Loading stages -->
             <div
               v-if="isFetchingStages"
-              class="flex items-center justify-center py-8"
+              class="flex items-center justify-center py-10 text-n-slate-11"
             >
-              <span class="text-n-slate-11">{{ t('CRM.LOADING') }}</span>
+              <Spinner />
             </div>
 
             <template v-else>

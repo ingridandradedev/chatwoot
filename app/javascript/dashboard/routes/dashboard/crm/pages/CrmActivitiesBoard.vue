@@ -6,6 +6,7 @@ import ContactAPI from 'dashboard/api/contacts';
 import AgentsAPI from 'dashboard/api/agents';
 import Draggable from 'vuedraggable';
 import NextButton from 'dashboard/components-next/button/Button.vue';
+import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 
 const { t } = useI18n();
 
@@ -250,8 +251,8 @@ onMounted(fetchTasks);
     </header>
 
     <!-- Loading -->
-    <div v-if="isLoading" class="flex items-center justify-center flex-1">
-      <span class="text-n-slate-11">{{ t('CRM.LOADING') }}</span>
+    <div v-if="isLoading" class="flex items-center justify-center py-10 text-n-slate-11">
+      <Spinner />
     </div>
 
     <!-- Kanban columns -->
