@@ -9,6 +9,10 @@ json.contact do
   json.id task.contact.id
   json.name task.contact.name
 end
+json.created_by do
+  json.id task.created_by.id
+  json.name task.created_by.name
+end
 json.due_date task.due_date.to_i
 json.reminder_at task.reminder_at&.to_i
 json.reminded task.reminded

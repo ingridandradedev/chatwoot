@@ -248,7 +248,7 @@ onMounted(fetchTask);
               <h3 class="text-xs font-medium text-n-slate-10 mb-0.5">Criado por</h3>
               <p class="text-sm text-n-slate-12 flex items-center gap-1">
                 <span class="i-lucide-user-plus w-3.5 h-3.5 text-n-slate-9" />
-                ID: {{ task.created_by_id }}
+                {{ task.created_by?.name || 'Desconhecido' }}
               </p>
             </div>
 
