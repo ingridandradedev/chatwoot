@@ -1,6 +1,17 @@
 {
   "CRM": {
     "LOADING": "Loading...",
+    "INTEGRATIONS": {
+      "TITLE": "Integrações",
+      "CALENDAR": {
+        "TITLE": "Calendário (iCal Feed)",
+        "DESCRIPTION": "Sincronize suas tasks do CRM com seu Google Calendar, Outlook ou qualquer app de calendário. As tasks atribuídas a você aparecerão como eventos.",
+        "YOUR_FEED_URL": "Sua URL de feed pessoal:",
+        "TOKEN_NOT_FOUND": "Token de autenticação não encontrado. Faça login novamente.",
+        "HOW_TO_USE": "Como usar:",
+        "SYNC_INFO": "O calendário externo atualiza o feed automaticamente a cada 12-24 horas."
+      }
+    },
     "KANBAN": {
       "PIPELINE_LABEL": "Pipeline",
       "NEW_DEAL": "New Deal",

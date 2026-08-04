@@ -689,6 +689,12 @@ const menuItems = computed(() => {
           to: accountScopedRoute('crm_pipeline_settings'),
           activeOn: ['crm_pipeline_settings'],
         },
+        {
+          name: 'Integrations',
+          label: t('SIDEBAR.CRM_INTEGRATIONS'),
+          to: accountScopedRoute('crm_integrations'),
+          activeOn: ['crm_integrations'],
+        },
       ],
     },
     {

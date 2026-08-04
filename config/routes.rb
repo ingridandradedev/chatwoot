@@ -227,6 +227,7 @@ Rails.application.routes.draw do
                 post :reopen
               end
             end
+            get 'calendar/feed', to: 'calendar_feed#show', defaults: { format: :ics }
           end
           resources :contacts, only: [:index, :show, :update, :create, :destroy] do
             collection do
