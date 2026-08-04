@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onActivated, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
 import PipelineAPI from 'dashboard/api/crm/pipelines';
@@ -76,6 +76,11 @@ onMounted(async () => {
   if (pipelines.value.length) {
     selectedPipelineId.value = pipelines.value[0].id;
   }
+});
+
+// Also refresh when navigating back to this page (e.g., after changing settings)
+onActivated(async () => {
+  await fetchPipelines();
 });
 
 watch(selectedPipelineId, async id => {
