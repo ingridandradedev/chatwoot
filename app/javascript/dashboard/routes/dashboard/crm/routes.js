@@ -3,6 +3,7 @@ import { FEATURE_FLAGS } from '../../../featureFlags';
 
 const CrmIndex = () => import('./pages/CrmIndex.vue');
 const CrmActivitiesBoard = () => import('./pages/CrmActivitiesBoard.vue');
+const CrmTaskDetail = () => import('./pages/CrmTaskDetail.vue');
 const PipelineSettings = () => import('./pages/PipelineSettings.vue');
 const CrmIntegrations = () => import('./pages/CrmIntegrations.vue');
 
@@ -22,6 +23,12 @@ export const routes = [
     path: frontendURL('accounts/:accountId/crm/activities'),
     name: 'crm_activities_board',
     component: CrmActivitiesBoard,
+    meta: commonMeta,
+  },
+  {
+    path: frontendURL('accounts/:accountId/crm/activities/:taskId'),
+    name: 'crm_task_detail',
+    component: CrmTaskDetail,
     meta: commonMeta,
   },
   {

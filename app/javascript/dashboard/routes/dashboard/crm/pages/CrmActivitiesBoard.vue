@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
+import { useRouter } from 'vue-router';
 import TaskAPI from 'dashboard/api/crm/tasks';
 import ContactAPI from 'dashboard/api/contacts';
 import AgentsAPI from 'dashboard/api/agents';
@@ -10,6 +11,7 @@ import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
 import CalendarView from 'dashboard/components/crm/CalendarView.vue';
 
 const { t } = useI18n();
+const router = useRouter();
 
 // View mode toggle
 const viewMode = ref('kanban'); // 'kanban' | 'calendar'
@@ -332,8 +334,9 @@ onMounted(fetchTasks);
           <template #item="{ element: task }">
             <div
               :data-task-id="task.id"
-              class="p-3 bg-white dark:bg-n-slate-3 rounded-lg shadow-sm border border-n-weak cursor-grab"
+              class="p-3 bg-white dark:bg-n-slate-3 rounded-lg shadow-sm border border-n-weak cursor-grab hover:border-n-slate-8 transition-colors"
               :class="{ 'border-red-300 dark:border-red-700': task.status === 'overdue' }"
+              @click="router.push({ name: 'crm_task_detail', params: { taskId: task.id } })"
             >
               <p class="text-sm font-medium text-n-slate-12 truncate">
                 {{ task.title }}
