@@ -13,17 +13,26 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['deal-moved']);
+const emit = defineEmits(['deal-moved', 'deal-click']);
 
-const onDragEnd = evt => {
-  if (evt.to !== evt.from || evt.oldIndex !== evt.newIndex) {
-    const dealId = Number(evt.item.dataset.dealId);
-    const toStageId = Number(evt.to.dataset.stageId);
-    const fromStageId = props.stage.id;
+const onDragChange = evt => {
+  // When a card is added to this column from another column
+  if (evt.added) {
+    const deal = evt.added.element;
+    const fromStageId = deal.stage_id;
+    const toStageId = props.stage.id;
     if (fromStageId !== toStageId) {
-      emit('deal-moved', { dealId, fromStageId, toStageId });
+      emit('deal-moved', {
+        dealId: deal.id,
+        fromStageId,
+        toStageId,
+      });
     }
   }
+};
+
+const onCardClick = deal => {
+  emit('deal-click', deal);
 };
 </script>
 
@@ -39,11 +48,13 @@ const onDragEnd = evt => {
       :data-stage-id="stage.id"
       animation="200"
       ghost-class="ghost"
-      class="flex-1 p-2 space-y-2 overflow-y-auto"
-      @end="onDragEnd"
+      class="flex-1 p-2 space-y-2 overflow-y-auto min-h-[100px]"
+      @change="onDragChange"
     >
       <template #item="{ element }">
-        <DealCard :deal="element" />
+        <div @click="onCardClick(element)">
+          <DealCard :deal="element" />
+        </div>
       </template>
     </Draggable>
   </div>

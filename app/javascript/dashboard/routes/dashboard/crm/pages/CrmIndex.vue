@@ -1,21 +1,23 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useCrmDealsStore } from 'dashboard/stores/crm/deals';
+import { useRouter } from 'vue-router';
 import PipelineAPI from 'dashboard/api/crm/pipelines';
+import DealAPI from 'dashboard/api/crm/deals';
 import KanbanColumn from 'dashboard/components/crm/KanbanColumn.vue';
 import DealFormModal from 'dashboard/components/crm/DealFormModal.vue';
 
 const { t } = useI18n();
-
-const dealStore = useCrmDealsStore();
+const router = useRouter();
 
 const pipelines = ref([]);
 const selectedPipelineId = ref(null);
 const showDealForm = ref(false);
 const isFetchingPipelines = ref(false);
+const isFetchingDeals = ref(false);
 
-const isFetchingDeals = computed(() => dealStore.getUIFlags.fetchingList);
+// Local mutable state for deals grouped by stage — vuedraggable can mutate these directly
+const dealsByStage = ref({});
 
 const selectedPipeline = computed(() =>
   pipelines.value.find(p => p.id === selectedPipelineId.value)
@@ -24,6 +26,13 @@ const stages = computed(() => selectedPipeline.value?.stages || []);
 const hasNoPipelines = computed(
   () => !isFetchingPipelines.value && pipelines.value.length === 0
 );
+
+const getDealsForStage = stageId => {
+  if (!dealsByStage.value[stageId]) {
+    dealsByStage.value[stageId] = [];
+  }
+  return dealsByStage.value[stageId];
+};
 
 const fetchPipelines = async () => {
   isFetchingPipelines.value = true;
@@ -37,6 +46,29 @@ const fetchPipelines = async () => {
   }
 };
 
+const fetchDeals = async pipelineId => {
+  isFetchingDeals.value = true;
+  try {
+    const { data } = await DealAPI.getForPipeline(pipelineId);
+    const deals = data.payload || data || [];
+    // Group by stage_id into local mutable arrays
+    const grouped = {};
+    stages.value.forEach(stage => {
+      grouped[stage.id] = [];
+    });
+    deals.forEach(deal => {
+      const sid = deal.stage_id;
+      if (!grouped[sid]) grouped[sid] = [];
+      grouped[sid].push(deal);
+    });
+    dealsByStage.value = grouped;
+  } catch {
+    dealsByStage.value = {};
+  } finally {
+    isFetchingDeals.value = false;
+  }
+};
+
 onMounted(async () => {
   await fetchPipelines();
   if (pipelines.value.length) {
@@ -46,7 +78,7 @@ onMounted(async () => {
 
 watch(selectedPipelineId, async id => {
   if (id) {
-    await dealStore.fetchForPipeline(id);
+    await fetchDeals(id);
   }
 });
 
@@ -54,13 +86,27 @@ const onPipelineChange = event => {
   selectedPipelineId.value = Number(event.target.value);
 };
 
-const onDealMoved = ({ dealId, fromStageId, toStageId }) => {
-  dealStore.moveToStage(
-    selectedPipelineId.value,
-    dealId,
-    fromStageId,
-    toStageId
-  );
+const onDealMoved = async ({ dealId, fromStageId, toStageId }) => {
+  // The vuedraggable already moved the item in the local arrays
+  // Now sync with the API
+  try {
+    await DealAPI.moveToStage(selectedPipelineId.value, dealId, toStageId);
+  } catch {
+    // Revert: move it back
+    const toArray = dealsByStage.value[toStageId] || [];
+    const idx = toArray.findIndex(d => d.id === dealId);
+    if (idx !== -1) {
+      const [deal] = toArray.splice(idx, 1);
+      deal.stage_id = fromStageId;
+      if (!dealsByStage.value[fromStageId]) dealsByStage.value[fromStageId] = [];
+      dealsByStage.value[fromStageId].push(deal);
+    }
+  }
+};
+
+const onDealClick = deal => {
+  const accountId = router.currentRoute.value.params.accountId;
+  router.push(`/app/accounts/${accountId}/contacts/${deal.contact?.id || deal.contact_id}`);
 };
 
 const openDealForm = () => {
@@ -72,8 +118,16 @@ const closeDealForm = () => {
 };
 
 const onDealFormSubmit = async dealData => {
-  await dealStore.createDeal(selectedPipelineId.value, dealData);
-  showDealForm.value = false;
+  try {
+    const { data } = await DealAPI.create(selectedPipelineId.value, dealData);
+    const newDeal = data.payload || data;
+    const sid = newDeal.stage_id;
+    if (!dealsByStage.value[sid]) dealsByStage.value[sid] = [];
+    dealsByStage.value[sid].push(newDeal);
+    showDealForm.value = false;
+  } catch {
+    // handle error
+  }
 };
 </script>
 
@@ -84,9 +138,7 @@ const onDealFormSubmit = async dealData => {
       v-if="isFetchingPipelines"
       class="flex items-center justify-center flex-1"
     >
-      <span class="text-n-slate-11">
-        {{ t('CRM.LOADING') }}
-      </span>
+      <span class="text-n-slate-11">{{ t('CRM.LOADING') }}</span>
     </div>
 
     <!-- Empty state: no pipelines -->
@@ -110,15 +162,10 @@ const onDealFormSubmit = async dealData => {
 
     <!-- Kanban board -->
     <template v-else>
-      <!-- Header with pipeline selector -->
-      <header
-        class="flex items-center justify-between gap-3 px-6 py-4 border-b border-n-strong"
-      >
+      <!-- Header -->
+      <header class="flex items-center justify-between gap-3 px-6 py-4 border-b border-n-strong">
         <div class="flex items-center gap-3">
-          <label
-            for="pipeline-selector"
-            class="text-sm font-medium text-n-slate-11"
-          >
+          <label for="pipeline-selector" class="text-sm font-medium text-n-slate-11">
             {{ t('CRM.KANBAN.PIPELINE_LABEL') }}
           </label>
           <select
@@ -150,17 +197,16 @@ const onDealFormSubmit = async dealData => {
         v-if="isFetchingDeals"
         class="flex items-center justify-center flex-1"
       >
-        <span class="text-n-slate-11">
-          {{ t('CRM.LOADING') }}
-        </span>
+        <span class="text-n-slate-11">{{ t('CRM.LOADING') }}</span>
       </div>
-      <div v-else class="flex flex-1 gap-4 p-4 overflow-x-auto">
+      <div v-else class="flex flex-1 gap-4 p-4 overflow-x-auto overflow-y-hidden">
         <KanbanColumn
           v-for="stage in stages"
           :key="stage.id"
           :stage="stage"
-          :deals="dealStore.getDealsForStage(stage.id)"
+          :deals="getDealsForStage(stage.id)"
           @deal-moved="onDealMoved"
+          @deal-click="onDealClick"
         />
       </div>
     </template>
