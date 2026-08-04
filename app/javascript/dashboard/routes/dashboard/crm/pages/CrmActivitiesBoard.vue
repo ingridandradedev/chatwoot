@@ -7,8 +7,12 @@ import AgentsAPI from 'dashboard/api/agents';
 import Draggable from 'vuedraggable';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import Spinner from 'dashboard/components-next/spinner/Spinner.vue';
+import CalendarView from 'dashboard/components/crm/CalendarView.vue';
 
 const { t } = useI18n();
+
+// View mode toggle
+const viewMode = ref('kanban'); // 'kanban' | 'calendar'
 
 const STATUS_COLUMNS = [
   { key: 'pending', label: 'Pendente' },
@@ -217,6 +221,19 @@ const onDragEnd = async (evt, toStatus) => {
   }
 };
 
+const onTaskDateChanged = async ({ taskId, newDueDate }) => {
+  const task = tasks.value.find(t => t.id === taskId);
+  if (!task) return;
+  const oldDate = task.due_date;
+  // Optimistic update
+  task.due_date = new Date(newDueDate).getTime() / 1000;
+  try {
+    await TaskAPI.update(taskId, { due_date: newDueDate });
+  } catch {
+    task.due_date = oldDate;
+  }
+};
+
 const formatDueDate = dateStr => {
   if (!dateStr) return '';
   const ts = typeof dateStr === 'number' ? dateStr * 1000 : dateStr;
@@ -240,9 +257,34 @@ onMounted(fetchTasks);
   <div class="flex flex-col h-full bg-n-surface-1">
     <!-- Header -->
     <header class="flex items-center justify-between px-6 py-4 border-b border-n-strong">
-      <h1 class="text-lg font-semibold text-n-slate-12">
-        {{ t('CRM.ACTIVITIES_BOARD.TITLE') }}
-      </h1>
+      <div class="flex items-center gap-4">
+        <h1 class="text-lg font-semibold text-n-slate-12">
+          {{ t('CRM.ACTIVITIES_BOARD.TITLE') }}
+        </h1>
+        <!-- View mode toggle -->
+        <div class="flex items-center rounded-lg border border-n-weak overflow-hidden">
+          <button
+            class="px-3 py-1.5 text-xs font-medium transition-colors"
+            :class="viewMode === 'kanban'
+              ? 'bg-n-brand text-white'
+              : 'bg-n-surface-2 text-n-slate-11 hover:text-n-slate-12'"
+            @click="viewMode = 'kanban'"
+          >
+            <span class="i-lucide-columns-3 w-3.5 h-3.5 inline-block align-middle mr-1" />
+            Kanban
+          </button>
+          <button
+            class="px-3 py-1.5 text-xs font-medium transition-colors border-l border-n-weak"
+            :class="viewMode === 'calendar'
+              ? 'bg-n-brand text-white'
+              : 'bg-n-surface-2 text-n-slate-11 hover:text-n-slate-12'"
+            @click="viewMode = 'calendar'"
+          >
+            <span class="i-lucide-calendar w-3.5 h-3.5 inline-block align-middle mr-1" />
+            Calendário
+          </button>
+        </div>
+      </div>
       <NextButton
         label="New Task"
         icon="i-lucide-plus"
@@ -255,8 +297,15 @@ onMounted(fetchTasks);
       <Spinner />
     </div>
 
+    <!-- Calendar view -->
+    <CalendarView
+      v-else-if="viewMode === 'calendar'"
+      :tasks="tasks"
+      @task-date-changed="onTaskDateChanged"
+    />
+
     <!-- Kanban columns -->
-    <div v-else class="flex flex-1 gap-4 p-4 overflow-x-auto">
+    <div v-else-if="viewMode === 'kanban'" class="flex flex-1 gap-4 p-4 overflow-x-auto overflow-y-hidden">
       <div
         v-for="column in STATUS_COLUMNS"
         :key="column.key"
