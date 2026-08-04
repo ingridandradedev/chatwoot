@@ -1,42 +1,25 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
+import { useStore } from 'dashboard/composables/store';
 import NextButton from 'dashboard/components-next/button/Button.vue';
 import { useAlert } from 'dashboard/composables';
 
 const { t } = useI18n();
 const route = useRoute();
+const store = useStore();
 
-const userToken = ref('');
 const copied = ref(false);
 
 const accountId = computed(() => route.params.accountId);
+const currentUser = computed(() => store.getters.getCurrentUser);
+const userToken = computed(() => currentUser.value?.access_token || '');
 
 const feedUrl = computed(() => {
   if (!userToken.value) return '';
   const base = window.location.origin;
   return `${base}/api/v1/accounts/${accountId.value}/crm/calendar/feed.ics?user_token=${userToken.value}`;
-});
-
-onMounted(() => {
-  // Get user token from auth headers stored in localStorage
-  const keys = Object.keys(window.localStorage);
-  const authKey = keys.find(k => k.startsWith('cw_d_'));
-  if (authKey) {
-    try {
-      const data = JSON.parse(window.localStorage.getItem(authKey));
-      userToken.value = data?.access_token || '';
-    } catch {
-      userToken.value = '';
-    }
-  }
-
-  // Fallback: try to get from cookie/meta
-  if (!userToken.value) {
-    const meta = document.querySelector('meta[name="user-token"]');
-    if (meta) userToken.value = meta.content;
-  }
 });
 
 const copyUrl = async () => {
