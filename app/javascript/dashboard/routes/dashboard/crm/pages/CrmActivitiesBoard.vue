@@ -50,7 +50,9 @@ let searchTimeout = null;
 const agents = ref([]);
 const isLoadingAgents = ref(false);
 
-const tasksByStatus = computed(() => {
+const tasksByStatus = ref({ pending: [], overdue: [], completed: [] });
+
+const groupTasksByStatus = () => {
   const grouped = { pending: [], overdue: [], completed: [] };
   tasks.value.forEach(task => {
     const status = task.status || 'pending';
@@ -60,8 +62,8 @@ const tasksByStatus = computed(() => {
       grouped.pending.push(task);
     }
   });
-  return grouped;
-});
+  tasksByStatus.value = grouped;
+};
 
 const isFormValid = computed(() => {
   return !!form.value.title.trim() && !!form.value.contactId && !!form.value.dueDate;
@@ -72,8 +74,10 @@ const fetchTasks = async () => {
   try {
     const { data } = await TaskAPI.getAll();
     tasks.value = data.payload || data || [];
+    groupTasksByStatus();
   } catch {
     tasks.value = [];
+    groupTasksByStatus();
   } finally {
     isLoading.value = false;
   }
@@ -200,16 +204,20 @@ const submitTask = async () => {
   }
 };
 
-const onDragEnd = async (evt, toStatus) => {
-  const taskId = Number(evt.item.dataset.taskId);
-  if (!taskId) return;
+const onDragChange = async (evt, toStatus) => {
+  // Only handle when a card is added to this column
+  if (!evt.added) return;
 
-  const task = tasks.value.find(t => t.id === taskId);
-  if (!task || task.status === toStatus) return;
-
+  const task = evt.added.element;
+  const taskId = task.id;
   const oldStatus = task.status;
+
+  if (oldStatus === toStatus) return;
+
+  // Update local state
   task.status = toStatus;
 
+  // Sync with API
   try {
     if (toStatus === 'completed') {
       await TaskAPI.complete(taskId);
@@ -219,7 +227,9 @@ const onDragEnd = async (evt, toStatus) => {
       await TaskAPI.update(taskId, { status: toStatus });
     }
   } catch {
+    // Revert on error
     task.status = oldStatus;
+    groupTasksByStatus();
   }
 };
 
@@ -328,8 +338,8 @@ onMounted(fetchTasks);
           item-key="id"
           animation="200"
           ghost-class="opacity-50"
-          class="flex-1 p-2 space-y-2 overflow-y-auto"
-          @end="evt => onDragEnd(evt, column.key)"
+          class="flex-1 p-2 space-y-2 overflow-y-auto min-h-[100px]"
+          @change="evt => onDragChange(evt, column.key)"
         >
           <template #item="{ element: task }">
             <div
